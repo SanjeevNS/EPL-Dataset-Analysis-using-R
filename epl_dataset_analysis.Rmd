@@ -1,0 +1,226 @@
+---
+title: "EPL Dataset Analysis using R"
+author: "Sanjeev N S"
+date: '2023-12-13'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+*Introduction
+there are many teams in england premier league.EPL is the top ranking football league where famous teams like manchester city,liverpool,chelsea etc plays.recent times,there is debate for machester is blue or red.In this analysis we find manchester is blue or red 
+
+```{r}
+#install.packages("ggplot2")
+library(ggplot2)
+#install.packages("gridExtra")  # Install gridExtra for grid.arrange function
+library(gridExtra)
+#install.packages("dplyr")
+library(dplyr)
+
+```
+
+```{r}
+dataset <- read.csv("C:\\Users\\sanjeev\\Desktop\\7TH SEM\\FDA\\archive\\Premier_League.csv")
+
+```
+
+
+```{r}
+# View the structure of the dataset (column names, data types)
+str(dataset)
+
+```
+
+**BASIC ANALYSIS**
+```{r}
+# Summary statistics of numerical columns
+summary(dataset)
+
+```
+
+
+```{r}
+# Check the first few rows of the dataset
+head(dataset,10)
+
+```
+
+
+```{r}
+# Check the last few rows of the dataset
+tail(dataset,10)
+
+```
+
+**find stadium which has highest attendence**
+
+
+```{r}
+# Find the row with the highest attendance
+max_attendance_row <- dataset[which.max(dataset$attendance), ]
+
+```
+
+```{r}
+# Extract the relevant information
+highest_attendance <- max_attendance_row$attendance
+stadium_with_highest_attendance <- max_attendance_row$stadium
+home_team_playing <- max_attendance_row$`Home.Team`
+away_team_playing <- max_attendance_row$`Away.Team`
+
+
+```
+
+```{r}
+# Print the results
+cat("Stadium with highest attendance:", stadium_with_highest_attendance, "\n")
+cat("Teams playing in the match:", home_team_playing, "vs", away_team_playing, "\n")
+cat("Attendance:", highest_attendance, "spectators", "\n")
+
+
+```
+*The above result shows the stadium which has highest attendence , teams playing and attendence . so we  can analyse that man city and man united are great rivals and many intrested to watch the match 
+
+
+**Calculate total yellow and red cards for each team home an away**
+```{r}
+# Calculate total yellow and red cards for each team at home
+home_yellow_red <- dataset %>%
+  group_by(Home.Team) %>%
+  summarise(Total_Home_Yellow_Cards = sum(home_yellow),
+            Total_Home_Red_Cards = sum(home_red)) %>%
+  arrange(desc(Total_Home_Yellow_Cards + Total_Home_Red_Cards))
+
+
+
+```
+
+```{r}
+# Calculate total yellow and red cards for each team away
+away_yellow_red <- dataset %>%
+  group_by(Away.Team) %>%
+  summarise(Total_Away_Yellow_Cards = sum(away_yellow),
+            Total_Away_Red_Cards = sum(away_red)) %>%
+  arrange(desc(Total_Away_Yellow_Cards + Total_Away_Red_Cards))
+
+
+```
+
+
+```{r}
+# Display teams with the most yellow and red cards at home and away
+cat("Teams with most yellow and red cards at home:\n")
+print(home_yellow_red)
+
+cat("\nTeams with most yellow and red cards away:\n")
+print(away_yellow_red)
+
+```
+* From the above output , we can infer that highest no of yellow cards in home games was recorded by Nottingham Forest  with the count of 49 and in away games was recorded by Fulham with the count of 53 yellow cards. Apart from yellow card , Wolverhampton Wanderers recorded totaly 4 red card in home matches and 2 red cards in away games totally 6 red cards most by any other teams 
+
+
+** DATA VISUALIZATION **
+```{r}
+#plot for home team goals vs away team goals
+#install.packages("ggplot2")
+library(ggplot2)
+plot1 <- ggplot(data = dataset, aes(x = `Home.Team`, y = `Goals.Home`)) +
+  geom_bar(stat = "identity", fill = "blue") +
+  labs(title = "Premier League Home Team Goals",
+       x = "Home Team",
+       y = "Goals Home") +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))
+
+plot2 <- ggplot(data = dataset, aes(x = `Away.Team`, y = `Away.Goals`)) +
+  geom_bar(stat = "identity", fill = "red") +
+  labs(title = "Premier League Away Team Goals",
+       x = "Away Team",
+       y = "Goals Away") +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))
+print(plot1)
+print(plot2)
+
+# Combine both plots
+combined_plot <- grid.arrange(plot1, plot2, ncol = 2)
+
+# Display the combined plot
+print(combined_plot)
+
+```
+
+* The above output has two graphs combined. one plot is for home team vs home goals and another plot shows away team vs away goals. From the graph we can infer that Man city has more home goals and Brentford has more away goals.Also we can infer that manchester city has more goals combined that any other team
+
+
+```{r}
+#Home team vs home shots and away team vs away shots
+plot1 <- ggplot(data = dataset, aes(x = `Home.Team`, y = `home_shots`)) +
+  geom_bar(stat = "identity", fill = "green") +
+  labs(title = "Premier League Home Team vs Home Shots",
+       x = "Home Team",
+       y = "Home Shots Taken") +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))
+
+plot2 <- ggplot(data = dataset, aes(x = `Away.Team`, y = `away_shots`)) +
+  geom_bar(stat = "identity", fill = "lightblue") +
+  labs(title = "Premier League Away Team vs Away Shots",
+       x = "Away Team",
+       y = "Away shots Taken") +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))
+print(plot1)
+print(plot2)
+
+# Combine both plots
+combined_plot <- grid.arrange(plot1, plot2, ncol = 2)
+
+# Display the combined plot
+print(combined_plot)
+
+
+```
+
+* The above output has two graphs combined. one plot is for home team vs home shots taken and another plot shows away team vs away shots taken. we can infer from the graph that Arsenel holds the highest no of shots taken in home games and man city holds the highest no of shots taken in away games
+
+
+```{r}
+# Load the dplyr package
+library(dplyr)
+
+
+# Calculate points and goal difference
+table_data <- dataset %>%
+  mutate(Winner = ifelse(Goals.Home > Away.Goals, Home.Team,
+                         ifelse(Away.Goals > Goals.Home, Away.Team, "Draw"))) %>%
+  group_by(Team = ifelse(Winner == "Draw", Home.Team, Winner)) %>%
+  summarise(
+    Matches_Played = n(),
+    Wins = sum(Winner == Team),
+    Draws = sum(Winner == "Draw"),
+    Losses = sum(Winner != Team & Winner != "Draw"),
+    Goals_For = sum(ifelse(Home.Team == Team, Goals.Home, Away.Goals)),
+    Goals_Against = sum(ifelse(Home.Team == Team, Away.Goals, Goals.Home)),
+    Goal_Difference = Goals_For - Goals_Against,
+    Points = 3 * Wins + Draws
+  ) %>%
+  arrange(desc(Points), Goal_Difference)  # Omit asc() for Goal_Difference
+
+# Display the table
+print(table_data)
+
+# Determine the winner
+winner <- table_data$Team[1]
+cat("The winner is:", winner, "\n")
+
+
+```
+*The above output calculates the points table and finds which team wins the title.
+------
+**Result : we have done data analysis and data visualiztion on 2022-23 premier league dataset . we have used various analysis and visualization to analyse data . As a result , we can infer Manchester city has played very well in this season and manchester is blue **
+
+-----
+```{r}
+
+
+```
